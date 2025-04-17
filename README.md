@@ -1,3 +1,35 @@
+# TOC
+
+- [TOC](#toc)
+- [Disclaimer](#disclaimer)
+- [Release notes](#release-notes)
+- [Contribution](#contribution)
+- [Install Instructions](#install-instructions)
+  - [Infra providers](#infra-providers)
+  - [Strongly recommended: configure Hetzner Firewall](#strongly-recommended-configure-hetzner-firewall)
+  - [In case of Red Hat Enterprise Linux](#in-case-of-red-hat-enterprise-linux)
+    - [Red Hat Enterprise Linux 8](#red-hat-enterprise-linux-8)
+    - [Red Hat Enterprise Linux 9](#red-hat-enterprise-linux-9)
+  - [In case of Rocky Linux 8 or Centos 8](#in-case-of-rocky-linux-8-or-centos-8)
+  - [Initialize tools](#initialize-tools)
+  - [Define variables for your cluster](#define-variables-for-your-cluster)
+    - [Cluster design (single node, compact or normal)](#cluster-design-single-node-compact-or-normal)
+      - [Single Node](#single-node)
+      - [Compact](#compact)
+      - [Normal](#normal)
+    - [Pre-releases](#pre-releases)
+    - [Set up public DNS records](#set-up-public-dns-records)
+    - [Optional configuration](#optional-configuration)
+  - [Prepare kvm-host and install OpenShift](#prepare-kvm-host-and-install-openshift)
+- [Additional documentation](#additional-documentation)
+- [Playbook overview](#playbook-overview)
+- [Useful commands](#useful-commands)
+- [Build / Development](#build--development)
+  - [Build ansible execution enviorment](#build-ansible-execution-enviorment)
+- [Stargazers over time](#stargazers-over-time)
+- [Troubleshooting](#troubleshooting)
+  - [ansible can not connect to host](#ansible-can-not-connect-to-host)
+
 # Disclaimer
 This environment has been created for the sole purpose of providing an easy to deploy and consume Red Hat OpenShift Container Platform 4 environment *as a sandpit*.
 
@@ -100,7 +132,7 @@ dnf install -y ansible-navigator git podman
 Ansible navigator installation based on the upstream [documentation](https://ansible-navigator.readthedocs.io/en/latest/installation/#install-ansible-navigator).
 
 ```bash
-dnf install -y python38-pip podman git
+dnf install -y python3-pip podman git
 python3 -m pip install ansible-navigator --user
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
 source ~/.profile
@@ -128,7 +160,7 @@ Here is an example of a [cluster.yml](cluster-example.yml) file that contains in
 | variable | description  |Default|
 |---|---|---|
 |`cluster_name`               |Name of the cluster to be installed | **Required** |
-|`dns_provider`               |DNS provider, value can be _route53_, _cloudflare_, _gcp_, _azure_,_transip_, _hetzner_ or _none_. Check __Setup public DNS records__ for more info. | **Required** |
+|`dns_provider`               |DNS provider, value can be _route53_, _cloudflare_, _gcp_, _azure_,_transip_, _hetzner_, _gandi_ or _none_. Check __Setup public DNS records__ for more info. | **Required** |
 |`image_pull_secret`          |Token to be used to authenticate to the Red Hat image registry. You can download your pull secret from https://cloud.redhat.com/openshift/install/metal/user-provisioned | **Required** |
 |`letsencrypt_account_email`  |Email address that is used to create LetsEncrypt certs. If _cloudflare_account_email_ is not present for CloudFlare DNS records, _letsencrypt_account_email_ is also used with CloudFlare DNS account email |  **Required** |
 |`public_domain`              |Root domain that will be used for your cluster.  | **Required** |
@@ -290,6 +322,9 @@ In our setup, this will be `ansible/group_vars` and `ansible/host_vars`.
 ## Build ansible execution enviorment
 
 ```bash
+python -m venv ansible-builder
+source ./ansible-builder/bin/activate
+pip install ansible-builder>=3.1.0
 
 VERSION=$(date +%Y%m%d%H%M)
 
@@ -305,3 +340,24 @@ podman push quay.io/redhat-emea-ssa-team/hetzner-ocp4-ansible-ee:$VERSION
 
 [![Stargazers over time](https://starchart.cc/RedHat-EMEA-SSA-Team/hetzner-ocp4.svg)](https://starchart.cc/RedHat-EMEA-SSA-Team/hetzner-ocp4)
 
+# Troubleshooting
+
+## ansible can not connect to host
+
+If you get a message like
+
+```
+fatal: [host]: UNREACHABLE! => {
+    "changed": false,
+    "msg": "Data could not be sent to remote host \"localhost\". Make sure this host can be reached over ssh: root@localhost: Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).\r\n",
+    "unreachable": true
+}
+```
+
+you can put an additional entry into the ```cluster.yml``` like
+
+```
+ansible_ssh_private_key_file: /root/.ssh/id_ed25519
+```
+
+Don't know if this is the most elegant solution, but at least it worked for me :-)

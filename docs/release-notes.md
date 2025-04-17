@@ -1,5 +1,23 @@
 # RELEASE NOTES
 
+## 2025-04-10
+ * Fixed the issue that nfs storage creation did not work with CentOS 10
+
+## 2025-04-04
+ * Add support for CentOS 10
+ * Use latest version of hetzner-ocp4-ansible-ee
+ * Use module community.general.lvol instead of community.general.system.lvol (which no longer seems to be available)
+ * Add troubleshooting section and table of content to README.md
+ * Bump OpenShift version to 4.18.3
+ * Update execution env.
+
+## 2024-09-28
+ * Added gandi as option to docs and example-cluster.yml
+ * Bump OpenShift Version to 4.16.13
+ * Correct Jinja Code for IDP Management.
+ * Allow faster rebuild if the machine is already in rescue mode
+ * Allow naming of the VG and to set the raid level.
+
 ## 2023-12-27
  * Bump OpenShift version to 4.14.6
  * Improve & Fix ( #294 ) air-gapped documentation
