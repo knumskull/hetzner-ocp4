@@ -1,19 +1,18 @@
 ---
-
 - name: Handle Red Hat Entitlement
   ansible.builtin.include_tasks: prepare-host-RedHat-entitlement.yml
   vars:
     rhsm_repository:
-      - rhel-8-for-x86_64-baseos-rpms
-      - rhel-8-for-x86_64-appstream-rpms
-      - rhel-8-for-x86_64-highavailability-rpms
-      - ansible-automation-platform-2.6-for-rhel-8-x86_64-rpms
+      - rhel-10-for-x86_64-baseos-rpms
+      - rhel-10-for-x86_64-appstream-rpms
+      - rhel-10-for-x86_64-highavailability-rpms
+      - ansible-automation-platform-2.6-for-rhel-10-x86_64-rpms
   when:
     - redhat_subscription_activationkey is defined
     - redhat_subscription_org_id is defined
 
 - name: Installing KVM Packages
-  ansible.builtin.package:
+  ansible.builtin.yum:
     name:
       - "@virtualization-hypervisor"
       - "@virtualization-client"
@@ -23,13 +22,22 @@
 
 - name: Installing playbook dependencies
   ansible.builtin.package:
-    name: python3-lxml
+    name:
+      - python3-lxml
+      - firewalld
     state: present
 
+- name: Enable & Start firewalld
+  ansible.builtin.service:
+    name: firewalld
+    state: started
+    enabled: true
+
 - name: Upgrade all packages
-  ansible.builtin.package:
+  ansible.builtin.yum:
     name: '*'
     state: latest
+    update_only: true
   register: update
 
 - name: Check if new kernel has been installed and local execution
@@ -80,3 +88,4 @@
 
 - name: firewalld reload
   ansible.builtin.command: firewall-cmd --reload
+

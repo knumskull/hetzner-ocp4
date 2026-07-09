@@ -46,7 +46,7 @@
         mode: 0644
         content: |
           variant: openshift
-          version: {{ openshift_version.split('.')[:2]|join('.') }}.0
+          version: {{ detected_openshift_version.split('.')[:2]|join('.') }}.0
           metadata:
             name: 99-{{ item }}-ipv6
             labels:
@@ -71,7 +71,7 @@
 
     - name: Mangle ignition config
       ansible.builtin.command: |
-        /opt/openshift-client-{{ openshift_version }}/butane \
+        /usr/local/bin/butane \
           --raw \
           --files-dir {{ openshift_install_dir }} \
           --output {{ openshift_install_dir }}/{{ item }}-extra.ign \

@@ -1,6 +1,109 @@
-## How to install RHEL 9 and use it as Hetzner base image
+# How to create a Red Hat Enterprise Linux (RHEL) Hetzner base image
 
-### Download the image and install a RHEL-9-minimal virtual machine
+There's (at least) two ways to get a RHEL image ready to use at Hetzner:
+1. [Automatically from a qcow2 image (RHEL 9 & 10 )](#automatically-from-a-qcow2-image)
+2. [Manually deploying a virtual machine (RHEL 9](#manually-deploying-a-virtual-machine)
+
+## Automatically from a qcow2 image
+### Using Red Hat Insights Image Builder
+Use the provided [image definition](../inventory/group_vars/all/rhel-image-definition.yaml) with [ansible-image-builder](https://github.com/enothen/ansible-image-builder) in order to request and download a virtualization image, from which the content is extracted into the tarball that you can use at Hetzner directly, without further modifications.
+
+#### Prerequisites
+Interaction with the Insights Image Builder API requires an offline token. You can get one [here](https://access.redhat.com/management/api), and then put it in a variable called `vault_offline_token` in your vault:
+```shell
+$ echo 'vault_offline_token: "<your offline token here>"' > inventory/group_vars/all/vault
+$ ansible-vault encrypt inventory/group_vars/all/vault
+```
+Put the vault password in a password file or provide it on the ansible-playbook command line.
+
+#### Image and tarball creation
+Run the playbook to get the virtualization image and generate the tarball:
+```shell
+$ ansible-navigator run ansible/00-create-rhel-image.yml
+
+PLAY [Generate RHEL image using insights image builder and extract OS as a tarball] ***
+
+TASK [Check that required variables are defined] *******************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+TASK [enothen.image_builder.check_images_exist : Set fact with release_str if release_id is set] ***
+skipping: [localhost]
+
+TASK [enothen.image_builder.check_images_exist : Check if image exists] ********
+ok: [localhost] => (item=./RHEL-96-el-amd64-minimal.qcow2)
+
+TASK [enothen.image_builder.check_images_exist : Show file status] *************
+ok: [localhost] => (item=./RHEL-96-el-amd64-minimal.qcow2) => {
+    "msg": "File exists: False"
+}
+
+TASK [enothen.image_builder.get_refresh_token : Get refresh_token from offline_token] ***
+ok: [localhost]
+
+TASK [enothen.image_builder.request_image_creation : Request creation of images] ***
+ok: [localhost] => (item=RHEL-96-el-amd64-minimal)
+
+TASK [enothen.image_builder.verify_compose_finished : Set retry counter] *******
+ok: [localhost]
+
+TASK [Get compose requests ids if undefined] ***********************************
+skipping: [localhost]
+
+TASK [enothen.image_builder.verify_compose_finished : Verify compose request is finished] ***
+FAILED - RETRYING: [localhost]: Verify compose request is finished (15 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (14 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (13 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (12 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (11 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (10 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (9 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (8 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (7 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (6 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (5 retries left).
+FAILED - RETRYING: [localhost]: Verify compose request is finished (4 retries left).
+ok: [localhost] => (item=RHEL-96-el-amd64-minimal: compose_status: success, upload_status: success)
+
+TASK [enothen.image_builder.download_images : Set fact with release_str if release_id is set] ***
+skipping: [localhost]
+
+TASK [enothen.image_builder.download_images : Start image download] ************
+changed: [localhost] => (item=./RHEL-96-el-amd64-minimal.qcow2)
+
+TASK [enothen.image_builder.download_images : Confirm image download completed] ***
+FAILED - RETRYING: [localhost]: Confirm image download completed (20 retries left).
+FAILED - RETRYING: [localhost]: Confirm image download completed (19 retries left).
+FAILED - RETRYING: [localhost]: Confirm image download completed (18 retries left).
+changed: [localhost] => (item=RHEL-96-el-amd64-minimal)
+
+TASK [Run virt-customize on the image] *****************************************
+changed: [localhost]
+
+TASK [Extract tarball from qcow2] **********************************************
+changed: [localhost]
+
+TASK [Compress tarball] ********************************************************
+changed: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=12   changed=5    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0
+$
+```
+Note: The image build may take more than 15 minutes, which causes the token to expire. When this happens, the output on the screen will show a failed task, but the ansible role will renew the token and keep retrying until the image build finishes.
+
+At this point, both the qcow2 image and the tarball will be available in the directory:
+```shell
+$ ls -1 ansible/RHEL-96-el-amd64-minimal.*
+RHEL-96-el-amd64-minimal.qcow2
+RHEL-96-el-amd64-minimal.tar.xz
+```
+The tar file is ready, proceed to section [Install the image on your server](#install-the-image-on-your-server) down below.
+
+## Manually deploying via virtual machine (RHEL 9)
+### Download the iso image and install a RHEL-9-minimal virtual machine
 
 Download the RHEL 9.1 DVD image from [Red Hat Customer Portal](https://access.redhat.com/downloads/content/479/ver=/rhel---9/9.1/x86_64/product-software)
 

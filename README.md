@@ -10,6 +10,7 @@
   - [In case of Red Hat Enterprise Linux](#in-case-of-red-hat-enterprise-linux)
     - [Red Hat Enterprise Linux 8](#red-hat-enterprise-linux-8)
     - [Red Hat Enterprise Linux 9](#red-hat-enterprise-linux-9)
+    - [Red Hat Enterprise Linux 10](#red-hat-enterprise-linux-10)
   - [In case of Rocky Linux 8 or Centos 8](#in-case-of-rocky-linux-8-or-centos-8)
   - [Initialize tools](#initialize-tools)
   - [Define variables for your cluster](#define-variables-for-your-cluster)
@@ -52,19 +53,17 @@ We are happy to track and discuss ideas, topics and requests via [Issues](https:
 
 # Install Instructions
 
-Our instructions are based on the CentOS Root Server as provided by [Hetzner](https://www.hetzner.com/), please feel free to adapt it to the needs of your preferred hosting provider. We are happy to get pull requests for an updated documentation, which makes consuming this setup easy also for other hosting providers.
+Our instructions are based on the Root Server as provided by [Hetzner](https://www.hetzner.com/), please feel free to adapt it to the needs of your preferred hosting provider. We are happy to get pull requests for an updated documentation, which makes consuming this setup easy also for other hosting providers.
 
-**These instructions are for running CentOS and 'root' machines which are set up following the [Hetzner CentOS](docs/hetzner.md) documentation. You might have to modify commands if running on another Linux distro.  Feel free to provide instructions for alternative providers.**
+**These instructions are for running a Red Hat Enterprise Linux based distro and 'root' machines which are set up following the [Hetzner](docs/hetzner.md) documentation. You might have to modify commands if running on another Linux distro.  Feel free to provide instructions for alternative providers.**
 
-**NOTE: If you are running on other environments than bare metal servers from Hetzner, check if there is specific instruction under Infra providers list and then jump to section [Initialize tools](https://github.com/RedHat-EMEA-SSA-Team/hetzner-ocp4#initialize-tools)**
+**NOTE: If you are running on other environments than bare metal servers from Hetzner, check if there is specific instruction under Infra providers list and then jump to section [Initialize tools](#initialize-tools)**
 
 **Supported root server operating systems:**
-- RHEL 8 - How to install RHEL8: https://keithtenzer.com/cloud/how-to-create-a-rhel-8-image-for-hetzner-root-servers/
-- RHEL 9 - leapp update from RHEL 8
-- RHEL 9 ([How to install RHEL9](docs/hetzner_rhel9.md))
-- CentOS Stream 9 base
-- Rocky Linux 9.1 base
-- Debian 11
+
+- RHEL 9 & 10 ([How to create a Red Hat Enterprise Linux (RHEL) Hetzner base image](docs/hetzner_rhel.md))
+- CentOS Stream 9 & 10 base
+- Rocky Linux 9 & 10 base
 
 ## Infra providers
 * [Hetzner CentOS](docs/hetzner.md)
@@ -75,59 +74,57 @@ When following the steps below, you will end with a setup similar to this:
 
 ## Strongly recommended: configure Hetzner Firewall
 
-**Important:** Hetzner Firewall only support IPv4 - IPv6 must be solved via the host firewall(d)!
-
 Here is an example Hetzner Firewall configuration:
 
 ![](images/firewall.png)
 
+|Name|Version|Source IP|Destination IP|Source port|Destination port|Protocol|TCP flags|Action|
+|---|---|---|---|---|---|---|---|---|
+|ssh|*||||22|tcp||accept|
+|api+ingress|*||||80,443,6443|tcp||accept|
+|icmp|*|||||icmp||accept|
+|[outgoing connections](https://docs.hetzner.com/robot/dedicated-server/firewall/#out-going-tcp-connections)|*||||32768-65535|tcp|ack|accept|
 
-|Name|Source IP|Destination IP|Source port|Destination port|Protocol|TCP flags|Action|
-|---|---|---|---|---|---|---|---|
-|ssh||||22|tcp||accept|
-|api+ingress||||80,443,6443|tcp||accept|
-|icmp|||||icmp||accept|
-|[outgoing connections](https://docs.hetzner.com/robot/dedicated-server/firewall/#out-going-tcp-connections)||||32768-65535|tcp|ack|accept|
-
+Optional hardening recommendation (especially for publicly reachable hosts): **change the SSH port on RHEL** and adjust both the host firewall and Hetzner Firewall accordingly. See: [docs/rhel-change-ssh-port.md](docs/rhel-change-ssh-port.md)
 
 ## In case of Red Hat Enterprise Linux
 
 Subscribe your RHEL host:
 ```bash
-subscription-manager register
-
-# get pool id via:
-# subscription-manager list --available
-subscription-manager attach [--auto] --pool=...
+rhc connect --activation-key <key> --organization <org>
 
 subscription-manager repos --disable=*
-
-```
-
-
-### Red Hat Enterprise Linux 8
-```bash
-subscription-manager repos \
-    --enable=rhel-8-for-x86_64-baseos-rpms \
-    --enable=rhel-8-for-x86_64-appstream-rpms \
-    --enable=rhel-8-for-x86_64-highavailability-rpms \
-    --enable=ansible-automation-platform-2.3-for-rhel-8-x86_64-rpms
 ```
 
 ### Red Hat Enterprise Linux 9
+
 ```bash
 subscription-manager repos \
     --enable=rhel-9-for-x86_64-baseos-rpms \
     --enable=rhel-9-for-x86_64-appstream-rpms \
     --enable=rhel-9-for-x86_64-highavailability-rpms \
-    --enable=ansible-automation-platform-2.3-for-rhel-9-x86_64-rpms
+    --enable=ansible-automation-platform-2.6-for-rhel-9-x86_64-rpms
 ```
 
 ```bash
 dnf install -y ansible-navigator git podman
 ```
 
-## In case of Rocky Linux 8 or Centos 8
+### Red Hat Enterprise Linux 10
+
+```bash
+subscription-manager repos \
+    --enable=rhel-10-for-x86_64-baseos-rpms \
+    --enable=rhel-10-for-x86_64-appstream-rpms \
+    --enable=rhel-10-for-x86_64-highavailability-rpms \
+    --enable=ansible-automation-platform-2.6-for-rhel-10-x86_64-rpms
+```
+
+```bash
+dnf install -y ansible-navigator git podman
+```
+
+## In case of Rocky Linux 9 or Centos 9
 
 Ansible navigator installation based on the upstream [documentation](https://ansible-navigator.readthedocs.io/en/latest/installation/#install-ansible-navigator).
 
@@ -141,7 +138,7 @@ source ~/.profile
 ## Initialize tools
 
 ```
-ssh-keygen
+ssh-keygen -t rsa -b 4096
 cat ~/.ssh/*.pub >> ~/.ssh/authorized_keys
 ```
 
@@ -160,7 +157,10 @@ Here is an example of a [cluster.yml](cluster-example.yml) file that contains in
 | variable | description  |Default|
 |---|---|---|
 |`cluster_name`               |Name of the cluster to be installed | **Required** |
-|`dns_provider`               |DNS provider, value can be _route53_, _cloudflare_, _gcp_, _azure_,_transip_, _hetzner_, _gandi_ or _none_. Check __Setup public DNS records__ for more info. | **Required** |
+|`openshift_version`          |OpenShift version to install, for example `4.20.8`|[stable](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/)|
+|`openshift_mirror`           |Location to download OpenShift artifacts|`https://mirror.openshift.com`|
+|`openshift_location`         |Path at OpenShift mirror|`{{ openshift_mirror }}/pub/openshift-v4/clients/ocp/{{ openshift_version }}"`|
+|`dns_provider`               |DNS provider, value can be _route53_, _cloudflare_, _gcp_, _azure_, _transip_, _hetzner_, _gandi_, _desec_ or _none_. Check __Setup public DNS records__ for more info. | **Required** |
 |`image_pull_secret`          |Token to be used to authenticate to the Red Hat image registry. You can download your pull secret from https://cloud.redhat.com/openshift/install/metal/user-provisioned | **Required** |
 |`letsencrypt_account_email`  |Email address that is used to create LetsEncrypt certs. If _cloudflare_account_email_ is not present for CloudFlare DNS records, _letsencrypt_account_email_ is also used with CloudFlare DNS account email |  **Required** |
 |`public_domain`              |Root domain that will be used for your cluster.  | **Required** |
@@ -171,6 +171,13 @@ Here is an example of a [cluster.yml](cluster-example.yml) file that contains in
 |`public_ipv6`                |Same as `public_ip` but for IPv6 | `listen_address_ipv6` |
 |`masters_schedulable`        |Optional to overwrite masters schedulable| `false` |
 |`sdn_plugin_name`            |Optional to change the SDN plugin between `OVNKubernetes` or `OpenShiftSDN` | `OVNKubernetes` |
+
+Example to install OpenShift candidate release:
+
+```yaml
+openshift_version: candidate
+openshift_location: "{{ openshift_mirror }}/pub/openshift-v4/clients/ocp-dev-preview/{{ openshift_version }}"
+```
 
 ### Cluster design (single node, compact or normal)
 
@@ -216,8 +223,8 @@ masters_schedulable: false
 
 ### Set up public DNS records
 
-Current tools allow use of three DNS providers: _AWS Route53_, _Cloudflare_, _DigitalOcean_, _GCP DNS_ or _none_.
-If you want to use _Route53_, _Cloudflare_, _DigitalOcean_, _GCP_ or _Gandi_ as your DNS provider, you have to add a few variables. Check the instructions below.
+Current tools allow use of following DNS providers: _AWS Route53_, _Cloudflare_, _DigitalOcean_, _GCP DNS_, _Hetzner_, _deSEC_ or _none_.
+If you want to use _Route53_, _Cloudflare_, _DigitalOcean_, _GCP_, _Gandi_, or _deSEC_ as your DNS provider, you have to add a few variables. Check the instructions below.
 
 DNS records are constructed based on _cluster_name_ and _public_domain_ values. With above values DNS records should be
 - api._cluster_name_._public_domain_
@@ -232,11 +239,12 @@ Please configure in `cluster.yml` all necessary credentials:
 | DNS provider | Variables  |
 |---|---|
 |Azure|`azure_client_id: 'client_id'`<br/>`azure_secret: 'key'`<br/>`azure_subscription_id: 'subscription_id'`<br/>`azure_tenant: 'tenant_id'`<br/>`azure_resource_group: 'dns_zone_resource_group'` |
-|CloudFlare|`cloudflare_account_email: john@example.com` <br> Use the global api key here! (API-Token is not supported!) (Details in #86) <br>`cloudflare_account_api_token: 9348234sdsd894.....` <br>  `cloudflare_zone: domain.tld`|
+|CloudFlare|`cloudflare_zone: domain.tld`<br>`cloudflare_api_token:`<hr>Or global api key **not recommended**<br><code>cloudflare_zone: domain.tld<br/>cloudflare_account_email: john@example.com<br/>cloudflare_account_api_token: 9348.....</code>|
+|deSEC|`desec_account_api_token: e7a6f82c3245b65cf4.....` <br>  `desec_zone: domain.tld`|
 |DigitalOcean|`digitalocean_token: e7a6f82c3245b65cf4.....` <br>  `digitalocean_zone: domain.tld`|
 |Gandi|`gandi_account_api_token: 0123456...` <br>  `gandi_zone: domain.tld`|
 |GCP|`gcp_project: project-name `<br/>`gcp_managed_zone_name: 'zone-name'`<br/>`gcp_managed_zone_domain: 'example.com.'`<br/>`gcp_serviceaccount_file: ../gcp_service_account.json` |
-|Hetzner|`hetzner_account_api_token: 93543ade82AA$73.....` <br>  `hetzner_zone: domain.tld`|
+|Hetzner|`hetzner_account_api_token: 93543ade82AA$73.....` (legacy DNS) or <br>`hetzner_cloud_api_token: 93543ade82AA$73.....` [(Hetzner Console DNS)](https://docs.hetzner.com/networking/dns/faq/beta) <br>  `hetzner_zone: domain.tld`|
 |Route53 / AWS|`aws_access_key: key` <br/>`aws_secret_key: secret` <br/>`aws_zone: domain.tld` <br/>|
 |TransIP|`transip_token: eyJ0eXAiOiJKV....` <br> `transip_zone: domain.tld`|
 |none|With `dns_provider: none` the playbooks will not create public dns entries. (It will skip letsencrypt too) Please create public dns entries if you want to access your cluster.|
@@ -327,13 +335,15 @@ source ./ansible-builder/bin/activate
 pip install ansible-builder>=3.1.0
 
 VERSION=$(date +%Y%m%d%H%M)
+IMAGE="quay.io/redhat-emea-ssa-team/hetzner-ocp4-ansible-ee:$VERSION"
 
 ansible-builder build \
     --verbosity 3 \
     --container-runtime podman \
-    --tag quay.io/redhat-emea-ssa-team/hetzner-ocp4-ansible-ee:$VERSION
+    --extra-build-cli-args='--platform linux/amd64' \
+    --tag $IMAGE
 
-podman push quay.io/redhat-emea-ssa-team/hetzner-ocp4-ansible-ee:$VERSION
+podman push $IMAGE
 ```
 
 # Stargazers over time

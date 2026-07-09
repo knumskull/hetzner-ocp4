@@ -8,16 +8,19 @@
     pd_provider: "{{ dns_provider }}"
     pd_public_ip: "{% if 'IPv4' in ip_families %}{{ public_ip | default(listen_address) }}{% endif %}"
     pd_public_ipv6: "{% if 'IPv6' in ip_families %}{{ public_ipv6 | default(listen_address_ipv6) }}{% endif %}"
+    pd_cloudflare_api_token: "{{ cloudflare_api_token }}"
     pd_cloudflare_account_api_token: "{{ cloudflare_account_api_token }}"
     pd_cloudflare_zone: "{{ cloudflare_zone }}"
     pd_aws_access_key: "{{ aws_access_key }}"
     pd_aws_secret_key: "{{ aws_secret_key }}"
     pd_aws_zone: "{{ aws_zone }}"
-    pd_hetzner_account_api_token: "{{ hetzner_account_api_token }}"
+    pd_hetzner_account_api_token: "{{ hetzner_cloud_api_token | default(hetzner_account_api_token) | default(omit) }}"
     pd_hetzner_zone: "{{ hetzner_zone }}"
     pd_gandi_api_key: "{{ gandi_api_key }}"
     pd_gandi_zone: "{{ gandi_zone }}"
     pd_public_domain: "{{ cluster_name }}.{{ public_domain }}"
+    pd_desec_zone: "{{ desec_zone }}"
+    pd_desec_account_api_token: "{{ desec_account_api_token }}"
   tags: public_dns
   when: dns_provider != 'none'
 

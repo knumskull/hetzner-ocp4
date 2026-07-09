@@ -46,7 +46,8 @@
     le_letsencrypt_account_email: "{{ letsencrypt_account_email | default(cloudflare_account_email) }}"
 
     le_cloudflare_account_email: "{{ cloudflare_account_email | default(letsencrypt_account_email) }}"
-    le_cloudflare_account_api_token: "{{ cloudflare_account_api_token }}"
+    le_cloudflare_account_api_token: "{{ cloudflare_account_api_token | default(None) }}"
+    le_cloudflare_api_token: "{{ cloudflare_api_token | default(None) }}"
     le_cloudflare_zone: "{{ cloudflare_zone }}"
 
     le_aws_access_key: "{{ aws_access_key }}"
@@ -64,7 +65,7 @@
     le_azure_tenant: "{{ azure_tenant }}"
     le_azure_resource_group: "{{ azure_resource_group }}"
 
-    le_hetzner_account_api_token: "{{ hetzner_account_api_token }}"
+    le_hetzner_account_api_token: "{{ hetzner_cloud_api_token | default(hetzner_account_api_token) | default(omit) }}"
     le_hetzner_zone: "{{ hetzner_zone }}"
 
     le_digitalocean_token: "{{ digitalocean_token }}"
@@ -72,6 +73,9 @@
 
     le_gandi_api_key: "{{ gandi_api_key }}"
     le_gandi_zone: "{{ gandi_zone }}"
+
+    le_desec_account_api_token: "{{ desec_account_api_token }}"
+    le_desec_zone: "{{ desec_zone }}"
   tags: letsencrypt
   when: not letsencrypt_disabled
 

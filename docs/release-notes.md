@@ -1,5 +1,50 @@
 # RELEASE NOTES
 
+## 2026-05-29
+
+ * Fix issue #352 - Cluster creation fails when checking OpenShift version
+ * Add support for `integration of Hetzner DNS into the Hetzner Console`
+    * use `hetzner_cloud_api_token` instead of `hetzner_account_api_token` if you already migrated your DNS Zone to Hetzner Console
+    * use `hetzner_account_api_token` (as before) if you didn't migrate to Hetzner Console yet
+    * [Migration Process](https://docs.hetzner.com/networking/dns/migration-to-hetzner-console/process)
+    * [Migration FAQ / Timeline etc.](https://docs.hetzner.com/networking/dns/migration-to-hetzner-console/process)
+
+## 2026-01-23
+
+ * Add support for DNS provider deSEC
+ * Fix copy of oc and kubectl CLIs
+ * Fix bug when undefining VMs without storage
+ * Fix bug when parsing GitHub organizations/teams
+ * Disable SecureBoot
+ * Enable boot menu
+ * Fix Mangle ignition config error with openshift_version = "stable"
+ * Build only RHEL10 images by default
+
+## 2026-01-09
+ * Bump OpenShift Version to stable - it will automatically install the stable version.
+ * Red Hat Enterprise Linux 10 
+ * Auto-detected stable openshift version
+    * Removed following variables: opm_dest, coreos_version, coreos_file, coreos_image_location openshift_client_version, opm_version
+ * Fix issue #333 - Improve ssh-keyget command
+ * Remove redhat_subscription_pool, not needed anymore
+ * Cleanup: Remove pipeline/ directory
+ * Update to ansible-automation-platform-2.6
+ * Add cloudflare_api_token support ( Issue #86 )
+ * Update proxy doc
+ * [Add docs about how to change ssh port on rhel](docs/rhel-change-ssh-port.md) ( Issue #292 )
+ * Update Hetzner Firewall documentation - added IPv6 ( Issue #291 )
+ * Added pre-check routines to avoid failing at a later time
+   * all parameters which are required have to be provided, otherwise the playbook will fail early.
+ * Removed blocker for installation of OpenShift 4.12 with IPv6 enabled. Installation is now completing without issues.
+ * Switch from k8s.gcr.io to registry.k8s.io ( Issue #305 )
+ * Update the entire ansible execution environment ( Issue #323 )
+   `quay.io/redhat-emea-ssa-team/hetzner-ocp4-ansible-ee:202601022229`
+ * Added process to create qcow2 image using Red Hat Insights Image Builder, through the ansible-image-builder role
+   * Added new process to documentation
+   * Implements #328
+  * Updated process to use ansible-navigator
+  * Updated EE to have image_builder collection and guestfs-tools installed
+
 ## 2025-04-10
  * Fixed the issue that nfs storage creation did not work with CentOS 10
 
